@@ -1,3 +1,7 @@
+"""
+AstrBot 词云生成插件
+"""
+
 import os
 import time
 import datetime
@@ -28,12 +32,12 @@ from .utils import (
     is_group_enabled,
     parse_time_str,
     extract_group_id_from_session,
-    load_stop_words,
+    load_stop_words, # 确保已导入
 )
 from .wordcloud_core.generator import WordCloudGenerator
 from .wordcloud_core.history_manager import HistoryManager
 from .wordcloud_core.scheduler import TaskScheduler
-from .wordcloud_core.getids import update_group_member_stopwords
+from .wordcloud_core.getids import update_group_member_stopwords # 确保已导入
 
 # 导入常量模块以便修改DATA_DIR
 from . import constant as constant_module
@@ -761,6 +765,7 @@ class WordCloudPlugin(Star):
             # --- 新增功能: 更新群成员到停用词表 ---
             try:
                 # 1. 解析停用词文件路径 (复用 _init_wordcloud_generator 中的逻辑)
+                logger.info("开始尝试更新停用词表...")
                 stop_words_file = self.config.get("stop_words_file", "stop_words.txt")
                 resolved_stop_path = None
                 
@@ -771,15 +776,19 @@ class WordCloudPlugin(Star):
                         data_stopwords_path = constant_module.DATA_DIR / "resources" / os.path.basename(stop_words_file)
                         if os.path.exists(data_stopwords_path):
                             resolved_stop_path = str(data_stopwords_path)
+                            logger.info(f"找到停用词文件(数据目录): {resolved_stop_path}")
                         else:
                             plugin_stopwords_path = constant_module.PLUGIN_DIR / stop_words_file
                             if os.path.exists(plugin_stopwords_path):
                                 resolved_stop_path = str(plugin_stopwords_path)
+                                logger.info(f"找到停用词文件(插件目录): {resolved_stop_path}")
                     else:
                         resolved_stop_path = stop_words_file
+                        logger.info(f"找到停用词文件(绝对路径): {resolved_stop_path}")
 
                 # 2. 执行更新并重载
                 if resolved_stop_path and os.path.exists(resolved_stop_path) and group_id_val:
+                    logger.info(f"准备更新群成员ID，文件路径: {resolved_stop_path}, 群ID: {group_id_val}")
                     # 更新文件
                     await update_group_member_stopwords(self.context, event, resolved_stop_path)
                     # 重新加载到生成器内存中
@@ -787,8 +796,11 @@ class WordCloudPlugin(Star):
                     if self.wordcloud_generator:
                         self.wordcloud_generator.stop_words = new_stop_words
                         logger.info("已重载停用词表 (包含最新群成员)")
+                else:
+                    logger.warning(f"未能更新停用词: 路径有效性={bool(resolved_stop_path and os.path.exists(resolved_stop_path))}, 群ID={group_id_val}")
             except Exception as e:
                 logger.error(f"更新群成员停用词失败: {e}")
+                logger.error(traceback.format_exc())
             # -----------------------------------
 
             # 处理消息文本并生成词云
@@ -1018,6 +1030,7 @@ class WordCloudPlugin(Star):
             # --- 新增功能: 更新群成员到停用词表 ---
             try:
                 # 1. 解析停用词文件路径 (复用 _init_wordcloud_generator 中的逻辑)
+                logger.info("开始尝试更新停用词表...")
                 stop_words_file = self.config.get("stop_words_file", "stop_words.txt")
                 resolved_stop_path = None
                 
@@ -1028,15 +1041,19 @@ class WordCloudPlugin(Star):
                         data_stopwords_path = constant_module.DATA_DIR / "resources" / os.path.basename(stop_words_file)
                         if os.path.exists(data_stopwords_path):
                             resolved_stop_path = str(data_stopwords_path)
+                            logger.info(f"找到停用词文件(数据目录): {resolved_stop_path}")
                         else:
                             plugin_stopwords_path = constant_module.PLUGIN_DIR / stop_words_file
                             if os.path.exists(plugin_stopwords_path):
                                 resolved_stop_path = str(plugin_stopwords_path)
+                                logger.info(f"找到停用词文件(插件目录): {resolved_stop_path}")
                     else:
                         resolved_stop_path = stop_words_file
+                        logger.info(f"找到停用词文件(绝对路径): {resolved_stop_path}")
 
                 # 2. 执行更新并重载
                 if resolved_stop_path and os.path.exists(resolved_stop_path) and group_id_val:
+                    logger.info(f"准备更新群成员ID，文件路径: {resolved_stop_path}, 群ID: {group_id_val}")
                     # 更新文件
                     await update_group_member_stopwords(self.context, event, resolved_stop_path)
                     # 重新加载到生成器内存中
@@ -1044,8 +1061,11 @@ class WordCloudPlugin(Star):
                     if self.wordcloud_generator:
                         self.wordcloud_generator.stop_words = new_stop_words
                         logger.info("已重载停用词表 (包含最新群成员)")
+                else:
+                    logger.warning(f"未能更新停用词: 路径有效性={bool(resolved_stop_path and os.path.exists(resolved_stop_path))}, 群ID={group_id_val}")
             except Exception as e:
                 logger.error(f"更新群成员停用词失败: {e}")
+                logger.error(traceback.format_exc())
             # -----------------------------------
 
             # 处理消息文本并生成词云
